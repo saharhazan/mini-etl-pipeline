@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airflow
+  template:
+    metadata:
+      labels:
+        app: airflow
+    spec:
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command: ["sh", "-c"]
+          args:
+            - |
+              mkdir -p /opt/airflow/data/raw /opt/airflow/data/processed /opt/airflow/input
+              chmod -R 777 /opt/airflow/data /opt/airflow/input
+              chown -R 50000:0 /opt/airflow/data /opt/airflow/input
+              if [ -f /opt/airflow/data/sales-orders.csv ]; then
+                cp /opt/airflow/data/sales-orders.csv /opt/airflow/input/sales-orders.csv
+                chmod 666 /opt/airflow/input/sales-orders.csv
+                chown 50000:0 /opt/airflow/input/sales-orders.csv
+              fi
+          volumeMounts:
+            - name: data
+              mountPath: /opt/airflow/data
+        - name: init-db
+          image: "{{ .Values.airflow.image.repository }}:{{ .Values.airflow.image.tag }}"
+          imagePullPolicy: {{ .Values.airflow.image.pullPolicy }}
+          command: ["sh", "-c"]
+          args:
+            - |
+              airflow db init
+              airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin || true
+          envFrom:
+            - configMapRef:
+                name: airflow-config
+          volumeMounts:
+            - name: data
+              mountPath: /opt/airflow/data
+      containers:
+        - name: airflow
+          image: "{{ .Values.airflow.image.repository }}:{{ .Values.airflow.image.tag }}"
+          imagePullPolicy: {{ .Values.airflow.image.pullPolicy }}
+          command: ["airflow"]
+          args: ["webserver"]
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: data
+              mountPath: /opt/airflow/data
+          envFrom:
+            - configMapRef:
+                name: airflow-config
+          resources:
+            {{- toYaml .Values.airflow.web.resources | nindent 12 }}
+      volumes:
+        - name: data
+          hostPath:
+            path: /Users/saharhazan/DataFabric_HomeTask/data

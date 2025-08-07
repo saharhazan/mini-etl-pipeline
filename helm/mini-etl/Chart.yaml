@@ -1,0 +1,5 @@
+apiVersion: v2
+name: mini-etl-airflow
+description: Deploys Apache Airflow for local ETL processing
+version: 0.1.0
+appVersion: "2.9.3"

@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+venv/
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Airflow logs
+logs/
+
+# Temporary files
+*.tmp

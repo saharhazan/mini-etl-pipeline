@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airflow-scheduler
+  template:
+    metadata:
+      labels:
+        app: airflow-scheduler
+    spec:
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          command: ["sh", "-c"]
+          args:
+            - |
+              mkdir -p /opt/airflow/data/raw /opt/airflow/data/processed /opt/airflow/input
+              chmod -R 777 /opt/airflow/data /opt/airflow/input
+              chown -R 50000:0 /opt/airflow/data /opt/airflow/input
+              if [ -f /opt/airflow/data/sales-orders.csv ]; then
+                cp /opt/airflow/data/sales-orders.csv /opt/airflow/input/sales-orders.csv
+                chmod 666 /opt/airflow/input/sales-orders.csv
+                chown 50000:0 /opt/airflow/input/sales-orders.csv
+              fi
+          volumeMounts:
+            - name: data
+              mountPath: /opt/airflow/data
+      containers:
+        - name: airflow-scheduler
+          image: "{{ .Values.airflow.image.repository }}:{{ .Values.airflow.image.tag }}"
+          imagePullPolicy: {{ .Values.airflow.image.pullPolicy }}
+          command: ["airflow"]
+          args: ["scheduler"]
+          volumeMounts:
+            - name: data
+              mountPath: /opt/airflow/data
+          envFrom:
+            - configMapRef:
+                name: airflow-config
+          resources:
+            limits:
+              memory: "1Gi"
+      volumes:
+        - name: data
+          hostPath:
+            path: /Users/saharhazan/DataFabric_HomeTask/data

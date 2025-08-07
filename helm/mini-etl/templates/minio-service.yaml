@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-service
+spec:
+  type: {{ .Values.minio.service.type }}
+  ports:
+    - name: api
+      port: {{ .Values.minio.service.port }}
+      targetPort: 9000
+      nodePort: {{ .Values.minio.service.nodePort }}
+    - name: console
+      port: 9001
+      targetPort: 9001
+      nodePort: 30091
+  selector:
+    app: minio

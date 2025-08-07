@@ -1,0 +1,71 @@
+# Configuration for the project path - update this to your local project directory
+projectPath: /path/to/mini-etl-pipeline
+
+airflow:
+  image:
+    repository: saharhazan/etl-airflow 
+    tag: latest
+    pullPolicy: Never
+
+  executor: LocalExecutor
+
+  service:
+    type: NodePort
+    port: 8080
+    nodePort: 31151
+
+  web:
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1.5Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+  env:
+    AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+    MINIO_ENDPOINT: "http://minio-service:9000"
+    MINIO_ACCESS_KEY: "minioadmin"
+    MINIO_SECRET_KEY: "minioadmin"
+    MINIO_BUCKET: "etl-data"
+
+  volumeMounts:
+    - name: dags
+      mountPath: /opt/airflow/dags
+    - name: data
+      mountPath: /opt/airflow/data
+
+  volumes:
+    - name: dags
+      hostPath:
+        path: "{{ .Values.projectPath }}/dags"
+    - name: data
+      hostPath:
+        path: "{{ .Values.projectPath }}/data"
+
+
+minio:
+  enabled: true
+
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucket: etl-data
+
+  persistence:
+    size: 1Gi
+
+  service:
+    type: NodePort
+    port: 9000
+    nodePort: 30090
+
+  resources:
+    limits:
+      cpu: 300m
+      memory: 1Gi
+    requests:
+      cpu: 100m
+      memory: 512Mi

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: airflow-service
+spec:
+  type: {{ .Values.airflow.service.type }}
+  ports:
+    - port: {{ .Values.airflow.service.port }}
+      targetPort: 8080
+      nodePort: {{ .Values.airflow.service.nodePort }}
+  selector:
+    app: airflow
